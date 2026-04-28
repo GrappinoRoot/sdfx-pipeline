@@ -23,10 +23,11 @@ jobs:
           sf org login sfdx-url --sfdx-url-file auth.txt --alias target-org
           sf org display --target-org target-org
 
-      - name: Quick deploy most recent validated deployment
+      - name: Deploy to production
         run: |
-          sf project deploy quick \
-            --use-most-recent \
+          sf project deploy start \
+            --source-dir force-app \
             --target-org target-org \
+            --test-level RunLocalTests \
             --wait 60 \
             --json
