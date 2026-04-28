@@ -4,10 +4,7 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "force-app/**"
-      - "sfdx-project.json"
-      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
 
 jobs:
   deploy:
