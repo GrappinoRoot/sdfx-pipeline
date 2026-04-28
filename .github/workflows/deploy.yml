@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "force-app/**"
+      - "sfdx-project.json"
+      - ".github/workflows/deploy.yml"
 
 jobs:
   deploy:
@@ -11,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
@@ -21,13 +25,9 @@ jobs:
           echo "${{ secrets.SF_AUTH_URL }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias target-org
 
-      - name: Download Job ID
-        uses: actions/download-artifact@v3
-        with:
-          name: deploy-job-id
-
-      - name: Quick Deploy
+      - name: Quick deploy most recent validated deployment
         run: |
-          JOB_ID=$(cat job_id.txt)
-          echo "Using JOB_ID=$JOB_ID"
-          sf project deploy quick --job-id $JOB_ID
+          sf project deploy quick \
+            --use-most-recent \
+            --target-org target-org \
+            --wait 60

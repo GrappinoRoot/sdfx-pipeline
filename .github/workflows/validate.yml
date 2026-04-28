@@ -1,17 +1,21 @@
-name: Salesforce Deploy PROD
+name: Salesforce Validate
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    paths:
+      - "force-app/**"
+      - "sfdx-project.json"
+      - ".github/workflows/validate.yml"
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
@@ -21,13 +25,22 @@ jobs:
           echo "${{ secrets.SF_AUTH_URL }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias target-org
 
-      - name: Download Job ID
-        uses: actions/download-artifact@v3
-        with:
-          name: deploy-job-id
-
-      - name: Quick Deploy
+      - name: Validate deployment
         run: |
-          JOB_ID=$(cat job_id.txt)
-          echo "Using JOB_ID=$JOB_ID"
-          sf project deploy quick --job-id $JOB_ID
+          sf project deploy validate \
+            --source-dir force-app \
+            --target-org target-org \
+            --test-level RunLocalTests \
+            --wait 60 \
+            --json > validate-result.json
+
+          jq -r '.result.id' validate-result.json > job_id.txt
+          test -s job_id.txt
+          echo "Validated deploy request id: $(cat job_id.txt)"
+
+      - name: Upload validated deploy request id
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-deploy-request-id
+          path: job_id.txt
+          retention-days: 10
